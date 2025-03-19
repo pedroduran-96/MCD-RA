@@ -1,0 +1,203 @@
+---
+title: "Regresión Lineal Simple - TP 1"
+author: "Pedro Duran"
+date: "18/03/2025"
+output:
+   html_document:
+     toc: yes
+     code_folding: show
+     toc_float: yes
+     df_print: paged
+     theme: united
+     code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<br> <br>
+
+# 1.1. Correlación
+
+<br>
+
+## [Ejercicio 1: Grasa cerdos.]{style="color:darkred"}
+
+<br>
+
+### a.- Diagramas de dispersión
+
+a.- Realizamos el diagrama de dispersión de las variables PV y EGD del dataset grasacerdos.xlsx.
+
+```{r, echo=TRUE}
+library(readxl)
+library(ggplot2)
+
+Grasacerdos<-read_excel("grasacerdos.xlsx")
+dim(Grasacerdos)#30 3
+head(Grasacerdos)
+
+# Verificar el tipo de datos original
+#str(Grasacerdos)
+
+# Convertir las comas a puntos y luego a numérico
+Grasacerdos$PV <- as.numeric(gsub(",", ".", Grasacerdos$PV))
+Grasacerdos$EGD <- as.numeric(gsub(",", ".", Grasacerdos$EGD))
+
+# Verificar el tipo de datos después de la conversión
+#str(Grasacerdos)
+
+attach(Grasacerdos) # carga la base en la memoria activa
+
+grasa.cerdos=data.frame(PV,EGD) # arma una sub-base con las variables numéricas de grasacerdos
+par(bg="white")
+pairs(grasa.cerdos) # representa todos los diagramas de dispersión de a pares
+
+
+#Diagrama de dispersión sencillo
+plot(PV,EGD,pch=16,col=1,xlab="Peso Vivo [Kg]",ylab="Espesor de Grasa Dorsal [mm]") +
+  title("Peso Vivo vs EGD")
+
+#Diagrama con ggplot
+ggplot(data = Grasacerdos, aes(x = PV, y = EGD)) +
+  geom_point(colour = "black") +
+  geom_vline(aes(xintercept = mean(PV)), color = "darkblue", linetype = "solid") +
+  geom_hline(aes(yintercept = mean(EGD)), color = "darkgreen", linetype = "solid") +
+  ggtitle("Peso Vivo [Kg] vs EGD [mm]") +
+  theme_bw() + theme(plot.title = element_text(hjust = 0.5)) +
+  annotate("text", x = mean(PV), y = max(Grasacerdos$EGD), label = paste("Media PV:", round(mean(PV), 2)), color = "darkblue", vjust = -0.1) +
+  annotate("text", x = max(Grasacerdos$PV), y = mean(EGD), label = paste("Media EGD:", round(mean(EGD), 2)), color = "darkgreen", hjust = +1, vjust = -0.1)
+
+```
+
+<br>
+
+#### Boxplots y resumen de variables PV y EGD
+
+<br>Se muestran los parámetros más importantes de las variables.<br>
+
+```{r, echo=TRUE}
+#Boxplots
+
+library(dplyr)#Paquete para manipular datos
+par(mfrow = c(2, 2), oma = c(0, 0, 2, 0), mar = c(4, 4, 2, 1), pin = c(1.5, 1.5)) # personaliza el espacio de gráfico
+# mfrow: divide la ventana gráfica en una matriz
+# oma: ajusta los márgenes exteriores
+# mar: ajusta los márgenes internos de cada gráfico
+# pin: establece el tamaño de cada gráfico en pulgadas (ancho, alto)
+
+boxplot(PV, main = "Boxplot PV") # realiza un boxplot básico
+boxplot(PV,horizontal=T, main = "Boxplot PV") # realiza un boxplot horizontal
+boxplot(EGD, main = "Boxplot EGD") # realiza un boxplot básico
+boxplot(EGD,horizontal=T,  main = "Boxplot EGD") # realiza un boxplot horizontal
+mtext("Gráficos de cajas básicos", outer = TRUE, cex = 1.5) # pone un título para ambos gráficos
+par(mfrow=c(2,2))
+
+#Resumen de la variable PV
+cat("Resumen de la variable PV:\n")
+print(summary(PV))
+cat("Desviación estándar de PV:", sd(PV), "\n")
+
+#Resumen de la variable EGD
+cat("Resumen de la variable EGD:\n")
+print(summary(EGD))
+cat("Desviación estándar de EGD:", sd(EGD), "\n")
+```
+
+<br>
+
+### b.- Cálculo de correlación
+
+<br> b.- Calcular el coeficiente de correlación muestral y explicarlo. <br>
+
+<br> Se calcula la correlación de Pearson entre las variables peso vivo y espesor de grasa dorsal.<br>
+
+```{r, echo=TRUE}
+cor(PV,EGD,method="pearson")
+```
+
+<br> Coeficiente de correlación: Un valor cercano a 1 indica una fuerte correlación positiva, mientras que un valor cercano a -1 indica una fuerte correlación negativa. Un valor cercano a 0 indica poca o ninguna correlación.<br>
+
+#### Correlograma
+
+<br> Se muestran las distintas variantes de correlogramas entre las variables PV y EGD.<br>
+
+```{r,echo=TRUE}
+library(corrplot)
+M=cor(grasa.cerdos) # calcula la matriz de correlación de las variables de la base
+M
+
+var(grasa.cerdos)# calcula la matriz de varianzas y covarianzas
+
+par(mfrow=c(2,2))
+corrplot(M,method="circle") # representa la matriz de correlaciones mediante círculos
+corrplot(M,method="square") # representa la matriz de correlaciones mediante cuadrados
+#corrplot(M,method="ellipse") # representa la matriz de correlaciones mediante elipses
+corrplot(M,method="number") # representa la matriz de correlaciones mediante números
+#corrplot(M,method="shade") # representa la matriz de correlaciones mediante sombreandos
+#corrplot(M,method="pie") # representa la matriz de correlaciones mediante gráficos de torta
+#corrplot(M,type="upper") # representa sólo la parte superior de la matriz de correlación
+#corrplot(M,type="lower") # representa sólo la parte inferior de la matriz de correlación
+#corrplot(M,method="ellipse",type="upper") # permite combinaciones de estilos
+corrplot.mixed(M) # representa la matriz de correlacion combinando círculos y números
+#corrplot.mixed(M,lower="circle",upper="shade") # permite combinaciones de estilos por bloques
+
+par(mfrow=c(1,1))
+
+```
+
+<br>
+
+#### Análisis de normalidad de las variables - Test de Shapiro Wilk
+
+<br>
+
+```{r, echo=TRUE}
+#Analizamos normalidad de las variables
+par(mfrow = c(1, 2)) 
+hist(PV, breaks = 15, main = "", xlab = "Peso Vivo", border = "darkblue") 
+hist(EGD, breaks = 15, main = "", xlab = "Esp. Grasa Dorsal", border = "darkgreen")
+
+qqnorm(PV, main = "Peso Vivo", col = "darkblue") 
+qqline(PV) 
+qqnorm(EGD, main = "Esp. Grasa Dorsal", col = "darkgreen") 
+qqline(EGD)
+
+par(mfrow = c(1, 1)) 
+
+#Test de hipótesis para el análisis de normalidad 
+shapiro.test(PV)
+shapiro.test(EGD)
+```
+
+<br>En ambos casos el test de Shapiro Wilk NO rechaza normalidad. <br>
+
+#### Análisis de normalidad multivariada - Test de Henze Zirkler
+
+<br>
+
+```{r, echo=TRUE}
+#Analizamos normalidad bivariada
+library(MVN)
+pv_egd=data.frame(PV,EGD)
+
+#Usamos Test Henze-Zirkler para evaluar normalidad multivariada (bivariada en este caso)
+respuesta_testHZ<-mvn(pv_egd , mvnTest = "hz")
+respuesta_testHZ
+respuesta_testHZ$multivariateNormality
+```
+
+<br> Puede sostenerse el supuesto de distribución normal bivariado para estas variables.
+
+### c.- Evidencia para admitir asociación
+
+<br> c.- ¿Hay suficiente evidencia para admitir asociación entre PV y EGD?(alfa=0,05). Verificar los supuestos para decidir el indicador que va a utilizar. <br>
+
+<br> Para contestar esta pregunta debemos recurrir al test de significancia, que ya aplicamos en el inciso b. El resultado de este test nos brindará un p-valor, que nos ayudará a decidir si la correlación es significativa. <br>
+
+```{r, echo=TRUE}
+cor.test(PV,EGD,method="pearson")
+```
+
+<br> Interpretación del Valor p ≥ 0.05: <br> Si el valor p es mayor o igual a 0.05, no podemos rechazar la hipótesis nula. Esto significa que no hay suficiente evidencia para concluir que existe una correlación significativa entre las dos variables. <br> El valor p es 0.175, que es mayor que 0.05. Esto indica que la correlación entre PV y EGD no es estadísticamente significativa, y podemos concluir que no existe evidencia suficiente para admitir asociación entre estas dos variables. <br>
